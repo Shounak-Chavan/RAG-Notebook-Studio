@@ -1,0 +1,23 @@
+langchain
+faiss-cpu
+langchain-community
+pypdf
+python-dotenv
+ipykernel
+pandas
+langchain-text-splitters
+pymupdf
+unstructured
+python-docx
+docx2txt
+unstructured[docx]
+unstructured[xlsx]
+openpyxl
+jq
+numpy
+matplotlib
+# Embeddings
+sentence-transformers
+langchain-huggingface
+# LLMs
+langchain-groq

@@ -1,0 +1,37 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+*.pyo
+*.pyd
+build/
+dist/
+wheels/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local Python version managers
+.python-version
+
+# Generated vector DB artifacts
+RAG_System/faiss_index/
+
+# Local source documents (keep folder with .gitkeep)
+RAG_System/data/*
+!RAG_System/data/.gitkeep
