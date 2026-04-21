@@ -38,6 +38,10 @@ faiss_index/
 .coverage
 htmlcov/
 
+# Docker and local env files
+.docker.env
+docker-compose.override.yml
+
 # Notebook and temp files
 *.tmp
 *.temp
