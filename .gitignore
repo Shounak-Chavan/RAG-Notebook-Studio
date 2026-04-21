@@ -31,6 +31,18 @@ Thumbs.db
 
 # Generated vector DB artifacts
 RAG_System/faiss_index/
+faiss_index/
+
+# Runtime artifacts
+*.log
+.coverage
+htmlcov/
+
+# Notebook and temp files
+*.tmp
+*.temp
+*.swp
+*.swo
 
 # Local source documents (keep folder with .gitkeep)
 RAG_System/data/*

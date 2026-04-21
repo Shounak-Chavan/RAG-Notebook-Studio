@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --card: rgba(255, 255, 255, 0.10);
+      --card-border: rgba(255, 255, 255, 0.18);
+      --text: #e5eefc;
+      --muted: rgba(229, 238, 252, 0.72);
+      --accent: #7c3aed;
+      --accent2: #22c55e;
+      --user: rgba(124, 58, 237, 0.22);
+      --bot: rgba(255, 255, 255, 0.12);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.28), transparent 28%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.20), transparent 24%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .wrap {
+      width: min(1120px, 100%);
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .title p, .hint, #status {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.8);
+    }
+
+    .section {
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .section h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+    }
+
+    .upload-row, .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.24);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); opacity: 0.95; }
+
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 78vh;
+    }
+
+    .chat-head {
+      padding: 22px 24px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .chat-head h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    .chat-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 78%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    }
+
+    .user {
+      align-self: flex-end;
+      background: var(--user);
+      border-top-right-radius: 6px;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background: var(--bot);
+      border-top-left-radius: 6px;
+    }
+
+    .composer {
+      padding: 18px 24px 24px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .row { margin-top: 0; }
+
+    #question {
+      flex: 1;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    #question::placeholder { color: rgba(229, 238, 252, 0.45); }
+    #question:focus { border-color: rgba(139, 92, 246, 0.8); }
+
+    .helper-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    #status {
+      min-height: 22px;
+    }
+
+    @media (max-width: 920px) {
+      .wrap { grid-template-columns: 1fr; }
+      .chat-panel { min-height: 70vh; }
+      .msg { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="panel sidebar">
+      <div class="title">
+        <span class="badge">Live RAG Assistant</span>
+        <h1>Glassmorphism PDF Chat</h1>
+        <p>Upload a PDF, build the FAISS index, and chat with your document using Groq.</p>
+      </div>
+
+      <div class="section">
+        <h3>Upload PDF</h3>
+        <form id="uploadForm">
+          <input type="file" id="fileInput" accept=".pdf" required />
+          <div class="upload-row">
+            <button type="submit">Build Index</button>
+          </div>
+        </form>
+        <div class="hint">New upload clears the current conversation.</div>
+        <div id="status"></div>
+      </div>
+
+      <div class="section">
+        <h3>How it works</h3>
+        <p class="hint">1. Upload PDF<br>2. Ask questions<br>3. Get context-aware answers with memory</p>
+      </div>
+    </aside>
+
+    <main class="panel chat-panel">
+      <div class="chat-head">
+        <h2>Conversation</h2>
+        <p>Ask follow-up questions. The app keeps the last few messages in memory.</p>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="composer">
+        <div class="row">
+          <input type="text" id="question" placeholder="Ask a question about the PDF..." />
+          <button id="sendBtn" type="button">Send</button>
+        </div>
+        <div class="helper-row">
+          <p class="hint">Tip: press Enter to send.</p>
+          <p class="hint">/health available for checks.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const statusEl = document.getElementById('status');
+    const messagesEl = document.getElementById('messages');
+    const questionEl = document.getElementById('question');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function addMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.textContent = `${role === 'user' ? 'You' : 'Bot'}: ${text}`;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!fileInput.files.length) return;
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      statusEl.textContent = 'Uploading and indexing...';
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        statusEl.textContent = `Done. Chunks: ${data.chunks}, Vectors: ${data.vectors}`;
+        messagesEl.innerHTML = '';
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    async function sendQuestion() {
+      const question = questionEl.value.trim();
+      if (!question) return;
+
+      addMessage('user', question);
+      questionEl.value = '';
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        addMessage('assistant', data.answer);
+      } catch (err) {
+        addMessage('assistant', `Error: ${err.message}`);
+      }
+    }
+
+    sendBtn.addEventListener('click', sendQuestion);
+    questionEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendQuestion();
+    });
+  </script>
+</body>
+</html>
