@@ -171,6 +171,56 @@ Project_1/
 
 ---
 
+## 🐳 Docker & EC2 Deployment
+
+This project includes a production-ready Dockerfile. The container runs with `gunicorn` and exposes port `80`.
+
+Build the Docker image locally:
+
+```bash
+docker build -t rag-notebook-studio:latest .
+```
+
+Run the container (recommended: mount a host volume for the FAISS index so it persists between runs):
+
+```bash
+# create a local folder for the faiss index
+mkdir -p ./faiss_index
+
+docker run -d \
+	-p 80:80 \
+	-e GROQ_API_KEY=your_key_here \
+	-v $(pwd)/faiss_index:/app/faiss_index \
+	--name rag-studio \
+	rag-notebook-studio:latest
+```
+
+Notes for AWS EC2 deployment:
+1. Provision an EC2 instance (Ubuntu 22.04 LTS recommended) and install Docker.
+2. Copy the image to the EC2 host (either build there or push to a registry and pull).
+3. On the EC2 host, run the container as above and ensure port 80 is open in the security group.
+
+Example quick commands (on EC2):
+
+```bash
+# Pull the image from Docker Hub (if you pushed it) or build on the instance
+docker pull your-dockerhub-username/rag-notebook-studio:latest
+
+docker run -d -p 80:80 \
+	-e GROQ_API_KEY="$GROQ_API_KEY" \
+	-v /home/ubuntu/faiss_index:/app/faiss_index \
+	--restart unless-stopped \
+	--name rag-studio \
+	your-dockerhub-username/rag-notebook-studio:latest
+```
+
+Security & production tips:
+- Do not bake secrets into images. Always pass `GROQ_API_KEY` via environment variables or a secrets manager.
+- Mount persistent storage for `faiss_index/` so embeddings survive container restarts.
+- Use a process manager or container orchestrator (systemd, Docker Compose, or ECS) to auto-restart and manage the service.
+- If resource constrained, reduce `gunicorn` workers (default in Dockerfile is 4). For CPU-heavy embedding steps, consider offloading embedding generation or using smaller instances.
+
+
 ## 👨‍💻 Author
 
 Built by **Shounak** for AI coursework and practical RAG experimentation.
