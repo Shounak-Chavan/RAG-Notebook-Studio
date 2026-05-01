@@ -1,27 +1,21 @@
-FROM python:3.11-slim
+FROM pytorch/pytorch:2.3.0-cpu
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
-# Install minimal dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for caching)
 COPY requirements.txt .
 
-# Install Python packages
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install uv && uv pip install --system -r requirements.txt
 
-# Copy project
 COPY . .
 
-# Expose port 80
 EXPOSE 80
 
-# Run app
 CMD ["python", "app.py"]
