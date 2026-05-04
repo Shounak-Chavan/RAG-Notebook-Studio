@@ -7,23 +7,23 @@ from flask import Flask, jsonify, render_template, request
 from pypdf import PdfReader
 
 from langchain_classic.retrievers import EnsembleRetriever
+from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_groq import ChatGroq
 from langchain_core.runnables import RunnableLambda
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
 app = Flask(__name__)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+USE_FAKE_MODELS = True
 
 embedding_model = None
 vectorstore = None
@@ -38,6 +38,13 @@ sections = {
     "references": "",
     "abstract": "",
 }
+
+
+class FakeCrossEncoder:
+    """Lightweight no-op reranker for test mode."""
+
+    def predict(self, pairs):
+        return [0.0 for _ in pairs]
 
 
 def load_pdf(file):
@@ -209,11 +216,16 @@ def split_text(text):
 def create_embeddings():
     global embedding_model
     if embedding_model is None:
-        embedding_model = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
+        if USE_FAKE_MODELS:
+            embedding_model = FakeEmbeddings(size=384)
+        else:
+            from langchain_huggingface import HuggingFaceEmbeddings
+
+            embedding_model = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_kwargs={"device": "cpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
     return embedding_model
 
 
@@ -237,7 +249,12 @@ def build_faiss_index(chunks):
         retrievers=[faiss_retriever, bm25_retriever],
         weights=[0.6, 0.4],
     )
-    reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+    if USE_FAKE_MODELS:
+        reranker = FakeCrossEncoder()
+    else:
+        from sentence_transformers import CrossEncoder
+
+        reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
     return vectorstore
 

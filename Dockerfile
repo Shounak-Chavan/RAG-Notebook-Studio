@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.3.0-cpu
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 
+# Install everything once using uv (no duplicate torch install)
 RUN pip install uv && uv pip install --system -r requirements.txt
 
 COPY . .
